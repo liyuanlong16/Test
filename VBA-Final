@@ -1,0 +1,66 @@
+Sub CleanDuplicateRows()
+    Dim ws As Worksheet
+    Set ws = ThisWorkbook.Sheets("Sheet1") ' Change to your sheet name if necessary
+
+    Dim lastRow As Long
+    lastRow = ws.Cells(ws.rows.Count, "A").End(xlUp).Row
+
+    Dim postalCode As String
+    Dim i As Long, j As Long
+    Dim deletedCount As Long
+    deletedCount = 0
+
+    ' Loop through each row and find duplicates
+    For i = 2 To lastRow
+        postalCode = ws.Cells(i, 1).Value
+        If postalCode <> "" Then
+            For j = lastRow To i + 1 Step -1
+                If ws.Cells(j, 1).Value = postalCode Then
+                    ' Convert all compared cells to string for consistent comparison
+                    Dim valI3 As String, valI4 As String, valI6 As String, valI7 As String
+                    Dim valJ3 As String, valJ4 As String, valJ6 As String, valJ7 As String
+
+                    valI3 = CStr(ws.Cells(i, 3).Value)
+                    valI4 = CStr(ws.Cells(i, 4).Value)
+                    valI6 = CStr(ws.Cells(i, 6).Value)
+                    valI7 = CStr(ws.Cells(i, 7).Value)
+
+                    valJ3 = CStr(ws.Cells(j, 3).Value)
+                    valJ4 = CStr(ws.Cells(j, 4).Value)
+                    valJ6 = CStr(ws.Cells(j, 6).Value)
+                    valJ7 = CStr(ws.Cells(j, 7).Value)
+
+                    ' Check for conditions
+                    If (valI3 <> valJ3) Or (valI6 <> valJ6) Then
+                        ' Clear the content of C, D, F, G for one row, delete the other
+                        ws.Cells(i, 3).ClearContents
+                        ws.Cells(i, 4).ClearContents
+                        ws.Cells(i, 6).ClearContents
+                        ws.Cells(i, 7).ClearContents
+                        ws.rows(j).Delete
+                        lastRow = lastRow - 1
+                        deletedCount = deletedCount + 1
+                    ElseIf (valI3 = valJ3) And (valI6 = valJ6) Then
+                        If (valI4 <> valJ4) Or (valI7 <> valJ7) Then
+                            ' Clear the content of D, G for one row, delete the other
+                            ws.Cells(i, 4).ClearContents
+                            ws.Cells(i, 7).ClearContents
+                            ws.rows(j).Delete
+                            lastRow = lastRow - 1
+                            deletedCount = deletedCount + 1
+                        ElseIf (valI4 = valJ4) And (valI7 = valJ7) Then
+                            ' Delete the duplicate row without clearing any content
+                            ws.rows(j).Delete
+                            lastRow = lastRow - 1
+                            deletedCount = deletedCount + 1
+                        End If
+                    End If
+                End If
+            Next j
+        End If
+    Next i
+
+    ' Display the total number of deleted rows
+    MsgBox "Total rows deleted: " & deletedCount
+
+End Sub
