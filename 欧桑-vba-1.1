@@ -1,0 +1,98 @@
+Sub ProcessPostalCodes()
+    Dim ws As Worksheet
+    Set ws = ThisWorkbook.Sheets(1)
+
+    Dim lastRow As Long
+    lastRow = ws.Cells(ws.Rows.Count, "A").End(xlUp).Row
+
+    Dim postalDict As Object
+    Set postalDict = CreateObject("Scripting.Dictionary")
+
+    Dim i As Long
+    Dim deleteCount As Long
+    deleteCount = 0
+
+    ' First pass: collect rows by postal code
+    For i = 2 To lastRow
+        Dim postalCode As String
+        postalCode = ws.Cells(i, 1).Value
+
+        If postalDict.exists(postalCode) Then
+            postalDict(postalCode).Add i
+        Else
+            postalDict.Add postalCode, New Collection
+            postalDict(postalCode).Add i
+        End If
+    Next i
+
+    ' Second pass: process each group of rows with the same postal code
+    Dim key As Variant
+    For Each key In postalDict.Keys
+        Dim rows As Collection
+        Set rows = postalDict(key)
+
+        If rows.Count > 1 Then
+            ' Convert rows collection to array for easier manipulation
+            Dim rowArray() As Long
+            ReDim rowArray(1 To rows.Count)
+            Dim idx As Long
+            For idx = 1 To rows.Count
+                rowArray(idx) = rows(idx)
+            Next idx
+
+            Dim retainRow As Long
+            retainRow = rowArray(1)
+
+            Dim firstC As String, firstD As String, firstF As String, firstG As String
+            firstC = ws.Cells(retainRow, 3).Value
+            firstD = ws.Cells(retainRow, 4).Value
+            firstF = ws.Cells(retainRow, 6).Value
+            firstG = ws.Cells(retainRow, 7).Value
+
+            Dim clearContents As Boolean
+            Dim rowToDelete As Long
+            For idx = 2 To UBound(rowArray)
+                rowToDelete = rowArray(idx)
+                Dim currentC As String, currentD As String, currentF As String, currentG As String
+                currentC = ws.Cells(rowToDelete, 3).Value
+                currentD = ws.Cells(rowToDelete, 4).Value
+                currentF = ws.Cells(rowToDelete, 6).Value
+                currentG = ws.Cells(rowToDelete, 7).Value
+
+                clearContents = False
+                If firstC <> currentC Then
+                    clearContents = True
+                ElseIf firstF <> currentF Then
+                    clearContents = True
+                ElseIf firstC = currentC And firstF = currentF And firstD <> currentD Then
+                    clearContents = True
+                ElseIf firstC = currentC And firstF = currentF And firstG <> currentG Then
+                    clearContents = True
+                End If
+
+                If clearContents Then
+                    ws.Cells(retainRow, 3).ClearContents
+                    ws.Cells(retainRow, 4).ClearContents
+                    ws.Cells(retainRow, 6).ClearContents
+                    ws.Cells(retainRow, 7).ClearContents
+                    firstC = ""
+                    firstD = ""
+                    firstF = ""
+                    firstG = ""
+                End If
+
+                If firstC = currentC And firstF = currentF And firstD = currentD And firstG = currentG Then
+                    ws.Rows(rowToDelete).Delete
+                    deleteCount = deleteCount + 1
+                    For j = idx To UBound(rowArray) - 1
+                        rowArray(j) = rowArray(j + 1)
+                    Next j
+                    ReDim Preserve rowArray(1 To UBound(rowArray) - 1)
+                    idx = idx - 1
+                End If
+            Next idx
+        End If
+    Next key
+
+    MsgBox "一共删除了 " & deleteCount & " 行数据。"
+End Sub
