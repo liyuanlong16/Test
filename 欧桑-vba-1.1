@@ -8,7 +8,6 @@ Sub ProcessPostalCodes()
     Dim postalDict As Object
     Set postalDict = CreateObject("Scripting.Dictionary")
 
-    Dim i As Long
     Dim deleteCount As Long
     deleteCount = 0
 
@@ -59,31 +58,37 @@ Sub ProcessPostalCodes()
                 currentF = ws.Cells(rowToDelete, 6).Value
                 currentG = ws.Cells(rowToDelete, 7).Value
 
-                clearContents = False
-                If firstC <> currentC Then
-                    clearContents = True
-                ElseIf firstF <> currentF Then
-                    clearContents = True
-                ElseIf firstC = currentC And firstF = currentF And firstD <> currentD Then
-                    clearContents = True
-                ElseIf firstC = currentC And firstF = currentF And firstG <> currentG Then
-                    clearContents = True
-                End If
-
-                If clearContents Then
+                If currentC <> firstC Or currentF <> firstF Then
+                    ' If 市区町村名列（C列）内容不同 || 市区町村名3(F列)内容不同
                     ws.Cells(retainRow, 3).ClearContents
                     ws.Cells(retainRow, 4).ClearContents
                     ws.Cells(retainRow, 6).ClearContents
                     ws.Cells(retainRow, 7).ClearContents
-                    firstC = ""
-                    firstD = ""
-                    firstF = ""
-                    firstG = ""
-                End If
-
-                If firstC = currentC And firstF = currentF And firstD = currentD And firstG = currentG Then
                     ws.Rows(rowToDelete).Delete
                     deleteCount = deleteCount + 1
+                    lastRow = lastRow - 1
+                    For j = idx To UBound(rowArray) - 1
+                        rowArray(j) = rowArray(j + 1)
+                    Next j
+                    ReDim Preserve rowArray(1 To UBound(rowArray) - 1)
+                    idx = idx - 1
+                ElseIf currentD <> firstD Or currentG <> firstG Then
+                    ' If 町域名(D列)内容不同 || 町域名4（G列）内容不同
+                    ws.Cells(retainRow, 4).ClearContents
+                    ws.Cells(retainRow, 7).ClearContents
+                    ws.Rows(rowToDelete).Delete
+                    deleteCount = deleteCount + 1
+                    lastRow = lastRow - 1
+                    For j = idx To UBound(rowArray) - 1
+                        rowArray(j) = rowArray(j + 1)
+                    Next j
+                    ReDim Preserve rowArray(1 To UBound(rowArray) - 1)
+                    idx = idx - 1
+                ElseIf currentC = firstC And currentF = firstF And currentD = firstD And currentG = firstG Then
+                    ' If 市区町村名列（C列）内容相同 && 市区町村名3(F列)内容相同 && 町域名(D列)内容相同 && 町域名4（G列）内容相同
+                    ws.Rows(rowToDelete).Delete
+                    deleteCount = deleteCount + 1
+                    lastRow = lastRow - 1
                     For j = idx To UBound(rowArray) - 1
                         rowArray(j) = rowArray(j + 1)
                     Next j
@@ -94,5 +99,5 @@ Sub ProcessPostalCodes()
         End If
     Next key
 
-    MsgBox "一共删除了 " & deleteCount & " 行数据。"
+    MsgBox "deleted: " & deleteCount & " :deleted"
 End Sub
