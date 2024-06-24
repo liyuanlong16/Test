@@ -1,0 +1,80 @@
+Sub CompareSheets()
+    Dim ws1 As Worksheet, ws2 As Worksheet
+    Dim newSheet1 As Worksheet, newSheet2 As Worksheet, newSheet3 As Worksheet
+    Dim dict1 As Object, dict2 As Object
+    Dim i As Long, lastRow1 As Long, lastRow2 As Long
+    Dim pc As String
+    Dim key As Variant
+
+    ' Set worksheets
+    Set ws1 = ThisWorkbook.Sheets("sheet1")
+    Set ws2 = ThisWorkbook.Sheets("sheet2")
+
+    ' Create new sheets
+    Set newSheet1 = ThisWorkbook.Sheets.Add(After:=ThisWorkbook.Sheets(ThisWorkbook.Sheets.Count))
+    newSheet1.Name = "MATCH"
+    Set newSheet2 = ThisWorkbook.Sheets.Add(After:=ThisWorkbook.Sheets(ThisWorkbook.Sheets.Count))
+    newSheet2.Name = "sheet1only"
+    Set newSheet3 = ThisWorkbook.Sheets.Add(After:=ThisWorkbook.Sheets(ThisWorkbook.Sheets.Count))
+    newSheet3.Name = "sheet2only"
+
+    ' Create dictionaries to hold POST_CODE values
+    Set dict1 = CreateObject("Scripting.Dictionary")
+    Set dict2 = CreateObject("Scripting.Dictionary")
+
+    ' Get last rows of each sheet
+    lastRow1 = ws1.Cells(ws1.Rows.Count, "A").End(xlUp).Row
+    lastRow2 = ws2.Cells(ws2.Rows.Count, "A").End(xlUp).Row
+
+    ' Populate dictionaries
+    For i = 2 To lastRow1 ' Assuming headers are in the first row
+        pc = ws1.Cells(i, 1).Value
+        If Not dict1.exists(pc) Then
+            dict1.Add pc, i
+        End If
+    Next i
+
+    For i = 2 To lastRow2 ' Assuming headers are in the first row
+        pc = ws2.Cells(i, 1).Value
+        If Not dict2.exists(pc) Then
+            dict2.Add pc, i
+        End If
+    Next i
+
+    ' Compare and populate new sheets
+    Dim row1 As Long, row2 As Long, row3 As Long
+    row1 = 2 ' Start from the second row, assuming the first row is header
+    row2 = 2 ' Start from the second row, assuming the first row is header
+    row3 = 2 ' Start from the second row, assuming the first row is header
+
+    For Each key In dict1.keys
+        If dict2.exists(key) Then
+            ' Matching POST_CODE
+            CopyRow ws1, dict1(key), newSheet1, row1
+            row1 = row1 + 1
+        Else
+            ' POST_CODE in sheet1 but not in sheet2
+            CopyRow ws1, dict1(key), newSheet2, row2
+            row2 = row2 + 1
+        End If
+    Next key
+
+    For Each key In dict2.keys
+        If Not dict1.exists(key) Then
+            ' POST_CODE in sheet2 but not in sheet1
+            CopyRow ws2, dict2(key), newSheet3, row3
+            row3 = row3 + 1
+        End If
+    Next key
+
+    ' Copy headers to new sheets (assuming headers are in the first row)
+    CopyRow ws1, 1, newSheet1, 1
+    CopyRow ws1, 1, newSheet2, 1
+    CopyRow ws2, 1, newSheet3, 1
+End Sub
+
+Sub CopyRow(sourceSheet As Worksheet, sourceRow As Long, destSheet As Worksheet, destRow As Long)
+    Dim lastCol As Long
+    lastCol = sourceSheet.Cells(1, sourceSheet.Columns.Count).End(xlToLeft).Column
+    destSheet.Rows(destRow).Resize(, lastCol).Value = sourceSheet.Rows(sourceRow).Resize(, lastCol).Value
+End Sub
