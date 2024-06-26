@@ -1,0 +1,58 @@
+Sub FindAndExtractDuplicates()
+    Dim ws As Worksheet
+    Dim newWs As Worksheet
+    Dim lastRow As Long
+    Dim cell As Range
+    Dim duplicateCount As Long
+    Dim dict As Object
+    Dim r As Range
+    Dim i As Long
+    Dim Key As Variant
+
+    ' Set the worksheet
+    Set ws = ThisWorkbook.Sheets("Sheet1")
+
+    ' Create a new worksheet for duplicates
+    Set newWs = ThisWorkbook.Sheets.Add(After:=ThisWorkbook.Sheets(ThisWorkbook.Sheets.Count))
+    newWs.Name = "Duplicates"
+
+    ' Initialize dictionary
+    Set dict = CreateObject("Scripting.Dictionary")
+
+    ' Get the last row in column A
+    lastRow = ws.Cells(ws.Rows.Count, 1).End(xlUp).Row
+
+    ' Loop through column A to find duplicates
+    For Each cell In ws.Range("A2:A" & lastRow)
+        If Not IsEmpty(cell.Value) Then
+            If dict.exists(cell.Value) Then
+                dict(cell.Value) = dict(cell.Value) + 1
+            Else
+                dict.Add cell.Value, 1
+            End If
+        End If
+    Next cell
+
+    ' Initialize duplicate count
+    duplicateCount = 0
+
+    ' Extract duplicates
+    newWs.Cells(1, 1).Value = "郵便番号"
+    i = 2
+    For Each Key In dict.keys
+        If dict(Key) > 1 Then
+            For Each r In ws.Range("A2:A" & lastRow)
+                If r.Value = Key Then
+                    newWs.Cells(i, 1).Value = r.Value
+                    i = i + 1
+                End If
+            Next r
+            duplicateCount = duplicateCount + dict(Key)
+        End If
+    Next Key
+
+    ' Display the message box
+    MsgBox "見つかった " & dict.Count - duplicateCount & " 件重複データ、抽出された" & duplicateCount & " 件", vbInformation, "結果"
+End Sub
+
+
