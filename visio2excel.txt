@@ -1,0 +1,63 @@
+Sub VisioToExcel()
+    Dim visioApp As Object
+    Dim visioDoc As Object
+    Dim visioPage As Object
+    Dim visioShape As Object
+    Dim excelSheet As Worksheet
+    Dim rowIndex As Integer
+
+    On Error GoTo ErrorHandler
+
+    ' Visioアプリケーションを起動
+    Set visioApp = CreateObject("Visio.Application")
+    ' Visioファイルを開く
+    Set visioDoc = visioApp.Documents.Open("C:\path\to\your\visiofile.vsdx")
+
+    ' 新しいExcelワークシートを作成
+    Set excelSheet = ThisWorkbook.Sheets.Add
+    excelSheet.Name = "Visio Data"
+
+    ' 行のインデックスを初期化
+    rowIndex = 1
+
+    ' Visioページをループ
+    For Each visioPage In visioDoc.Pages
+        ' ページ名をExcelに書き込む
+        excelSheet.Cells(rowIndex, 1).Value = "Page: " & visioPage.Name
+        rowIndex = rowIndex + 1
+
+        ' Visio図形をループ
+        For Each visioShape In visioPage.Shapes
+            ' 図形データをExcelに書き込む
+            excelSheet.Cells(rowIndex, 1).Value = visioShape.Name
+            excelSheet.Cells(rowIndex, 2).Value = visioShape.Text
+            rowIndex = rowIndex + 1
+
+            ' メモリを解放
+            Set visioShape = Nothing
+        Next visioShape
+
+        ' ページ間のスペースを空ける
+        rowIndex = rowIndex + 1
+
+        ' メモリを解放
+        Set visioPage = Nothing
+    Next visioPage
+
+    ' Visioアプリケーションを閉じる
+    visioApp.Quit
+
+Cleanup:
+    ' オブジェクトを解放
+    Set visioShape = Nothing
+    Set visioPage = Nothing
+    Set visioDoc = Nothing
+    Set visioApp = Nothing
+
+    MsgBox "Visio data has been successfully exported to Excel!"
+    Exit Sub
+
+ErrorHandler:
+    MsgBox "Error: " & Err.Description, vbCritical
+    Resume Cleanup
+End Sub
