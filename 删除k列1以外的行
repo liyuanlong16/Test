@@ -1,0 +1,18 @@
+Sub DeleteNotEqualToOne()
+    Dim ws As Worksheet
+    Dim lastRow As Long
+    Dim i As Long
+    
+    ' 设置工作表
+    Set ws = ThisWorkbook.Sheets("Sheet1") ' 替换 "Sheet1" 为你的工作表名称
+    
+    ' 找到最后一行
+    lastRow = ws.Cells(ws.Rows.Count, "K").End(xlUp).Row
+    
+    ' 从最后一行开始向上遍历
+    For i = lastRow To 1 Step -1
+        If ws.Cells(i, "K").Value <> 1 Then
+            ws.Rows(i).Delete
+        End If
+    Next i
+End Sub
